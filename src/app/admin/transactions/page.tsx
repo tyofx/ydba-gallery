@@ -9,16 +9,42 @@ import { Button } from "@/components/ui/Button";
 import { useTransactionStore } from "@/store/transaction.store";
 import { formatCurrency } from "@/lib/utils";
 import type { Transaction } from "@/types";
-import { Plus, Download } from "lucide-react";
+import { Plus } from "lucide-react";
+
+// 1. Import komponen ExportExcelButton
+import { ExportExcelButton } from "@/components/ui/ExportButton";
 
 export default function AdminTransactionsPage() {
-  const { transactions } = useTransactionStore();
+  // 2. Ambil getFilteredTransactions dari store
+  const { getFilteredTransactions } = useTransactionStore();
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
 
-  const pending = transactions.filter((t) => t.status === "pending").length;
-  const totalVolume = transactions
+  // 3. Gunakan data yang sudah difilter
+  const filteredTransactions = getFilteredTransactions();
+
+  // 4. Hitung ringkasan secara dinamis berdasarkan hasil filter
+  const pending = filteredTransactions.filter(
+    (t) => t.status === "pending",
+  ).length;
+  const totalVolume = filteredTransactions
     .filter((t) => t.status === "completed")
     .reduce((s, t) => s + t.totalAmount, 0);
+
+  // 5. Format data untuk Excel agar nested object (items) menjadi string yang rapi
+  const exportData = filteredTransactions.map((t) => ({
+    "Reference ID": t.reference,
+    "Tipe Transaksi": t.type.toUpperCase(),
+    Status: t.status.toUpperCase(),
+    "Total Nominal": t.totalAmount,
+    "Dibuat Oleh": t.createdBy,
+    "Disetujui Oleh": t.approvedBy || "-",
+    Tanggal: new Date(t.createdAt).toLocaleString("id-ID"),
+    // Menggabungkan nama barang dan kuantitasnya menjadi satu string
+    "Rincian Barang": t.items
+      .map((i) => `${i.itemName} (Qty: ${i.quantity})`)
+      .join(", "),
+    Catatan: t.notes || "-",
+  }));
 
   return (
     <DashboardLayout>
@@ -30,7 +56,7 @@ export default function AdminTransactionsPage() {
               Transactions
             </h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              {transactions.length} total · {pending} pending ·{" "}
+              {filteredTransactions.length} total · {pending} pending ·{" "}
               <span className="font-medium text-slate-700">
                 {formatCurrency(totalVolume)}
               </span>{" "}
@@ -38,13 +64,15 @@ export default function AdminTransactionsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<Download className="w-3.5 h-3.5" />}
-            >
-              Export
-            </Button>
+            {/* 6. Pasang Tombol Export di sini */}
+            <ExportExcelButton
+              data={exportData}
+              filename="Laporan_Transaksi_InvenFlow"
+              sheetName="Riwayat Transaksi"
+              label="Export"
+              className="h-8 px-3 text-xs shadow-sm"
+            />
+
             <Button size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
               New Transaction
             </Button>

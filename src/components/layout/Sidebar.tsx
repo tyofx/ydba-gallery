@@ -13,9 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  Users,
+  Store,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface NavItem {
@@ -46,6 +48,18 @@ const NAV_ITEMS: NavItem[] = [
     roles: ["admin"],
   },
   {
+    label: "Customers",
+    href: "/admin/customers",
+    icon: <Users className="w-4 h-4" />,
+    roles: ["admin"],
+  },
+  {
+    label: "Data UMKM",
+    href: "/admin/umkm",
+    icon: <Store className="w-4 h-4" />,
+    roles: ["admin"],
+  },
+  {
     label: "Dashboard",
     href: "/finance/dashboard",
     icon: <LayoutDashboard className="w-4 h-4" />,
@@ -68,24 +82,30 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const { user, logout } = useAuthStore();
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
   const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.roles || (user && item.roles.includes(user.role))
+    (item) => !item.roles || (user && item.roles.includes(user.role)),
   );
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <aside
       className={cn(
         "flex flex-col h-screen bg-white border-r border-slate-200 transition-all duration-300 shrink-0",
-        collapsed ? "w-16" : "w-60"
+        collapsed ? "w-16" : "w-60",
       )}
     >
       {/* Logo */}
       <div
         className={cn(
           "flex items-center h-14 px-4 border-b border-slate-100 shrink-0",
-          collapsed ? "justify-center" : "justify-between"
+          collapsed ? "justify-center" : "justify-between",
         )}
       >
         {!collapsed && (
@@ -107,7 +127,7 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
             "p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors",
-            collapsed && "hidden"
+            collapsed && "hidden",
           )}
         >
           <ChevronLeft className="w-4 h-4" />
@@ -135,7 +155,8 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
         {visibleItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
@@ -146,7 +167,7 @@ export function Sidebar() {
                 active
                   ? "bg-slate-900 text-white"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                collapsed && "justify-center px-2"
+                collapsed && "justify-center px-2",
               )}
             >
               {item.icon}
@@ -165,15 +186,17 @@ export function Sidebar() {
       <div className="px-2 py-3 border-t border-slate-100 space-y-0.5">
         {!collapsed && user && (
           <div className="px-2.5 py-2 mb-1">
-            <p className="text-xs font-medium text-slate-900 truncate">{user.name}</p>
+            <p className="text-xs font-medium text-slate-900 truncate">
+              {user.name}
+            </p>
             <p className="text-xs text-slate-400 truncate">{user.email}</p>
           </div>
         )}
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className={cn(
             "flex items-center gap-3 w-full px-2.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors",
-            collapsed && "justify-center px-2"
+            collapsed && "justify-center px-2",
           )}
           title={collapsed ? "Log out" : undefined}
         >

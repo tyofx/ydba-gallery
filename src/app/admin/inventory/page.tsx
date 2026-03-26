@@ -10,17 +10,24 @@ import { Modal } from "@/components/ui/Modal";
 import { useInventoryStore } from "@/store/inventory.store";
 import { formatCurrency } from "@/lib/utils";
 import type { InventoryItem } from "@/types";
-import { Plus, Download, Package, AlertTriangle } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
+import { ExportExcelButton } from "@/components/ui/ExportButton";
 
 export default function AdminInventoryPage() {
-  const { items, deleteItem } = useInventoryStore();
+  const { items, deleteItem, getFilteredItems } = useInventoryStore();
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<InventoryItem | null>(null);
 
-  const totalValue = items.reduce((s, i) => s + i.totalValue, 0);
-  const lowStock = items.filter((i) => i.status === "low_stock").length;
-  const outOfStock = items.filter((i) => i.status === "out_of_stock").length;
+  // Mengambil data yang sudah difilter
+  const filteredItems = getFilteredItems();
+
+  // Menghitung ringkasan berdasarkan data yang difilter
+  const totalValue = filteredItems.reduce((s, i) => s + i.totalValue, 0);
+  const lowStock = filteredItems.filter((i) => i.status === "low_stock").length;
+  const outOfStock = filteredItems.filter(
+    (i) => i.status === "out_of_stock",
+  ).length;
 
   const handleEdit = (item: InventoryItem) => {
     setEditItem(item);
@@ -42,16 +49,22 @@ export default function AdminInventoryPage() {
               Inventory
             </h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              {items.length} items · Total value:{" "}
+              {filteredItems.length} items · Total value:{" "}
               <span className="font-medium text-slate-700">
                 {formatCurrency(totalValue)}
               </span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>
-              Export
-            </Button>
+            {/* Tombol Export Excel */}
+            <ExportExcelButton
+              data={filteredItems}
+              filename="Laporan_Inventaris"
+              sheetName="Data Inventaris"
+              label="Export"
+              className="h-8 px-3 text-xs shadow-sm"
+            />
+
             <Button
               size="sm"
               leftIcon={<Plus className="w-3.5 h-3.5" />}
@@ -74,7 +87,10 @@ export default function AdminInventoryPage() {
               {lowStock > 0 && (
                 <span className="font-medium">{lowStock} low stock</span>
               )}
-              <span className="text-amber-600"> — consider restocking soon</span>
+              <span className="text-amber-600">
+                {" "}
+                — consider restocking soon
+              </span>
             </p>
           </div>
         )}
